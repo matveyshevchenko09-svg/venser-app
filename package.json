@@ -1,0 +1,36 @@
+{
+  "name": "venser",
+  "productName": "Vensera-База знаний",
+  "version": "1.0.0",
+  "description": "VENSER — корпоративная система",
+  "main": "main.js",
+  "author": "VENSER",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64 --publish never"
+  },
+  "dependencies": {
+    "electron-updater": "6.3.9"
+  },
+  "devDependencies": {
+    "electron": "33.4.11",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "ru.venser.app",
+    "productName": "Vensera-База знаний",
+    "icon": "build/icon.png",
+    "files": ["main.js", "preload.js", "offline.html", "build/icon.png"],
+    "directories": { "output": "dist" },
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Vensera-База знаний",
+      "artifactName": "VENSER-Setup.${ext}"
+    },
+    "publish": [{ "provider": "github", "owner": "GITHUB_OWNER", "repo": "venser-app", "releaseType": "release" }]
+  }
+}
