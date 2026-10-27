@@ -1,0 +1,48 @@
+name: Сборка VENSER для Windows
+
+# Запускается, когда вы публикуете новый релиз на GitHub (например, v1.0.1)
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Версия из названия релиза
+        if: github.event_name == 'release'
+        shell: bash
+        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
+
+      - name: Подставить владельца репозитория (для автообновления)
+        shell: bash
+        run: sed -i "s/GITHUB_OWNER/${GITHUB_REPOSITORY_OWNER}/" package.json
+
+      - name: Установка
+        run: npm ci || npm install
+
+      - name: Сборка установщика
+        run: npm run dist
+
+      - name: Загрузка в релиз
+        if: github.event_name == 'release'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" dist/VENSER-Setup.exe dist/VENSER-Setup.exe.blockmap dist/latest.yml --clobber
+
+      - name: Сохранить файл сборки
+        uses: actions/upload-artifact@v4
+        with:
+          name: VENSER-Setup
+          path: dist/VENSER-Setup.exe
