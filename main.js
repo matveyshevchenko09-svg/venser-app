@@ -18,9 +18,12 @@ function createWindow() {
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, devTools: false, spellcheck: true }
   });
-  // Windows не отдаёт содержимое окна скриншотам и записи экрана — вместо него чёрный прямоугольник.
+  // Главное: Windows не отдаёт содержимое окна скриншотам, записи и демонстрации экрана — вместо него чёрный прямоугольник.
   win.setContentProtection(true);
-  Menu.setApplicationMenu(null);
+  if (process.platform === 'darwin') {
+    // На Mac без меню не работают Cmd+C / Cmd+V / Cmd+Q — оставляем только самое нужное
+    Menu.setApplicationMenu(Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'windowMenu' }]));
+  } else Menu.setApplicationMenu(null);
   win.loadURL(START).catch(() => win.loadFile(path.join(__dirname, 'offline.html')));
   win.webContents.on('did-fail-load', (e, code, desc, url, isMain) => { if (isMain && code !== -3) win.loadFile(path.join(__dirname, 'offline.html')); });
   win.webContents.setWindowOpenHandler(({ url }) => { if (!isAllowed(url)) shell.openExternal(url); return { action: 'deny' }; });
@@ -39,7 +42,7 @@ function setupUpdates() {
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.on('update-downloaded', info => {
     dialog.showMessageBox(win, { type: 'info', buttons: ['Перезапустить сейчас', 'Позже'], defaultId: 0, cancelId: 1,
-      title: 'Обновление Vensera-База знаний', message: 'Загружена новая версия ' + info.version + '.', detail: 'Перезапустить программу, чтобы установить её? Иначе обновление установится при следующем закрытии.' })
+      title: 'Обновление Vensera-База знаний', message: 'Загружена новая версия VENSER ' + info.version + '.', detail: 'Перезапустить программу, чтобы установить её? Иначе обновление установится при следующем закрытии.' })
       .then(r => { if (r.response === 0) autoUpdater.quitAndInstall(); });
   });
   autoUpdater.on('error', () => {});
@@ -56,3 +59,4 @@ app.whenReady().then(() => {
   setupUpdates();
 });
 app.on('window-all-closed', () => app.quit());
+app.on('activate', () => { if (!win) createWindow(); });
