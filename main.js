@@ -1,5 +1,5 @@
 // VENSER для Windows: окно сайта с системным запретом захвата экрана + автообновление.
-const { app, BrowserWindow, shell, Menu, session, dialog } = require('electron');
+const { app, BrowserWindow, shell, Menu, session, dialog, clipboard, ipcMain } = require('electron');
 const path = require('path');
 let autoUpdater = null;
 try { autoUpdater = require('electron-updater').autoUpdater; } catch (e) { autoUpdater = null; }
@@ -50,6 +50,13 @@ function setupUpdates() {
   setTimeout(check, 5000);
   setInterval(check, 4 * 60 * 60 * 1000);
 }
+
+// Буфер обмена для пункта «Вставить» в меню правой кнопки (только для сайта VENSER, только чтение)
+ipcMain.handle('venser-clipboard-read', e => {
+  try { if (!isAllowed(e.senderFrame ? e.senderFrame.url : e.sender.getURL())) return null; } catch (_) { return null; }
+  const img = clipboard.readImage();
+  return { text: clipboard.readText(), html: clipboard.readHTML(), image: img.isEmpty() ? null : img.toDataURL() };
+});
 
 app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
 app.whenReady().then(() => {
