@@ -58,6 +58,14 @@ ipcMain.handle('venser-clipboard-read', e => {
   return { text: clipboard.readText(), html: clipboard.readHTML(), image: img.isEmpty() ? null : img.toDataURL() };
 });
 
+// Свой сервер файлов VENSER Media во внутренней сети: у него собственный (внутренний) сертификат HTTPS.
+// Доверяем ему ТОЛЬКО для этого адреса; для всех остальных сайтов проверка сертификатов обычная.
+const MEDIA_HOSTS = ['192.168.80.133'];
+app.on('certificate-error', (e, wc, url, err, cert, cb) => {
+  let host = ''; try { host = new URL(url).hostname; } catch (_) {}
+  if (MEDIA_HOSTS.includes(host)) { e.preventDefault(); cb(true); } else cb(false);
+});
+
 app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
 app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((wc, perm, cb) => cb(['media', 'clipboard-sanitized-write', 'notifications', 'fullscreen'].includes(perm)));
