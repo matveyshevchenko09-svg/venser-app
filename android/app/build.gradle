@@ -1,0 +1,44 @@
+plugins { id 'com.android.application' }
+
+def verName = (System.getenv('VENSER_VERSION') ?: '1.0.0').replaceFirst(/^v/, '')
+def p = verName.tokenize('.').collect { it.replaceAll(/\D.*/, '') }.collect { it ? it.toInteger() : 0 }
+while (p.size() < 3) p << 0
+def verCode = p[0] * 10000 + p[1] * 100 + p[2]
+def repo = System.getenv('GITHUB_REPOSITORY') ?: 'matveyshevchenko09-svg/venser-app'
+
+android {
+    namespace 'ru.venser.app'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'ru.venser.app'
+        minSdk 24
+        targetSdk 34
+        versionCode verCode
+        versionName verName
+        buildConfigField 'String', 'UPDATE_JSON', "\"https://github.com/${repo}/releases/latest/download/android-version.json\""
+    }
+    buildFeatures { buildConfig true }
+    signingConfigs {
+        release {
+            def ks = System.getenv('ANDROID_KEYSTORE_FILE')
+            if (ks) {
+                storeFile file(ks)
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias 'venser'
+                keyPassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (System.getenv('ANDROID_KEYSTORE_FILE')) signingConfig signingConfigs.release
+        }
+    }
+    lint { abortOnError false; checkReleaseBuilds false }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+}
